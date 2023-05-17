@@ -35,7 +35,7 @@ class n:
     def is_being_served(self):
         return self.beingServed
     def setLine(self,l):
-        line=l
+        self.line= l
 
 
 """
@@ -111,6 +111,7 @@ def genBaristas(div,num,i):
     else:
         return k(True,i)
 
+
 """
 Calculate the cost
 K        = List of Barists 
@@ -119,18 +120,24 @@ def cost_fun(K) -> float:
     counter = 0
     calc_wait = 0
     if K.line:
-        for j in K.service_time:
-            counter+=1
-            if j.ext != 0:
-                calc_wait+= (j.ext  - j.person.enter) 
-        return calc_wait / counter
-
+        if len(K.service_time) <= 2:
+            return 3
+        else:
+            for j in K.service_time:
+                counter+=1
+                if j.ext != 0:
+                    calc_wait+= (j.ext  - j.person.enter) 
+            return calc_wait / (counter)
+      
     else:
-        for j in K.service_time:
-            counter+=1
-            if j.ext != 0:
-                calc_wait+= (j.ext  - j.person.enter)
-        return calc_wait / counter * 0.8
+        if len(K.service_time) <= 2:
+            return 2.4
+        else:
+            for j in K.service_time:
+                counter+=1
+                if j.ext != 0:
+                    calc_wait+= (j.ext  - j.person.enter)
+            return (calc_wait / counter) * ALPHA
     
 """
 Calculate the cost but without alpha because each patron has already greedily measured cost by their alpha
@@ -160,6 +167,17 @@ def genPartrons(div,num,i,enter,cost) -> n:
      else:
         return n(True,enter,cost)
      
+"""
+Takes care of each patrons line selection upon their entry
+K       = List of Barista
+enter   = clock time upon entry
+cost    = cost per order for a patron (we set this to 3)
+"""
+def genGreedyPatrons(enter,cost,K):
+    selection  = greedy_selection(K)
+    
+    return n(selection,enter,cost)
+
 
 def genPatronsRandom(div,num,i,enter,cost) -> n:
     top = 10000
@@ -171,7 +189,7 @@ def genPatronsRandom(div,num,i,enter,cost) -> n:
 
 
 """
-Free a bastista given that their time serving a person a function of enter time + cost is = curr time
+Free a bastista given that their time serving a person a function of enter `time + cost is = curr time
 K        = List of baristas 
 time     = Clock time 
 """
@@ -259,24 +277,13 @@ n_i     = patron_i
 K       = list of baristas
 time    = clock time
 """
-def greedy_selection(n_i, K,time) -> bool:
+def greedy_selection(K):
     costs = []
-    if time > 2:
-        for k in K:
-            # Calculate average cost for each barista 
-            costs.append(cost_fun(k))
-        n_i.setLine(K[costs.index(min(costs))].line)
-        if occupy_Barista(n_i,K,time):
-            n_i.setBeingServed(True)
-            return True
-        else:
-            return False
-    else:
-        if occupy_Barista_realloc(n_i,K,time):
-             n_i.setBeingServed(True)
-             return True
-        else:
-            return False
+    for k in K:
+        costs.append(cost_fun(k))
+    print(costs)
+    return K[costs.index(min(costs))].line
+
         
 """
 Allow a patron to select a line of their choice 
@@ -310,9 +317,9 @@ Each person looks at their cost for joining each line as a function of their ord
 complexity and how many are in each line with a 50/50 split if a person joins the virtual queue they 
 will incur a cost as a function of their alpha, otherwise they will just incur their pure cost as a function of nothing. 
 """
-def Greedy_Simulation(K,rounds,div,stopGenAt,howMantToGenEachRound,cost,realloc) -> None:
+def Greedy_Simulation(K,rounds,stopGenAt,howMantToGenEachRound,cost,realloc) -> None:
     x = 0
-    N = [] # TODO
+    N = [] 
     if not realloc:
         while x <= rounds:
             x+=1
@@ -321,10 +328,10 @@ def Greedy_Simulation(K,rounds,div,stopGenAt,howMantToGenEachRound,cost,realloc)
                 freeBaristas(K,x,service_time)
             if x < stopGenAt:
                 for i in range(howMantToGenEachRound):
-                    N.append(genPartrons(div,howMantToGenEachRound,i,x,cost))
+                    N.append(genGreedyPatrons(x,cost,K))
             for n in N:
                 if n.beingServed == False:
-                    if greedy_selection(n,K,time=x):
+                    if occupy_Barista(n,K,time=x):
                         n.setBeingServed(True)
         while has_unserved_patron(N):
             x+=1
@@ -333,20 +340,20 @@ def Greedy_Simulation(K,rounds,div,stopGenAt,howMantToGenEachRound,cost,realloc)
                     freeBaristas(K,x,service_time)
             for n in N:
                 if n.beingServed == False:
-                    if greedy_selection(n,K,time=x):
+                    if occupy_Barista(n,K,time=x):
                         n.setBeingServed(True)
     if realloc:
-        while x <= rounds:
+        while x < rounds:
             x+=1
             service_time = 1
             if x % service_time == 0:
                 freeBaristas(K,x,service_time)
             if x < stopGenAt:
                 for i in range(howMantToGenEachRound):
-                    N.append(genPartrons(div,howMantToGenEachRound,i,x,cost))
+                    N.append(genGreedyPatrons(x,cost,K))
             for n in N:
                 if n.beingServed == False:
-                    if greedy_selection_realloc(n,K,time=x):
+                    if occupy_Barista_realloc(n,K,time=x):
                         n.setBeingServed(True)
         while has_unserved_patron(N):
             x+=1
@@ -355,7 +362,7 @@ def Greedy_Simulation(K,rounds,div,stopGenAt,howMantToGenEachRound,cost,realloc)
                     freeBaristas(K,x,service_time)
             for n in N:
                 if n.beingServed == False:
-                    if greedy_selection_realloc(n,K,time=x):
+                    if occupy_Barista_realloc(n,K,time=x):
                         n.setBeingServed(True)
 
 
@@ -397,20 +404,23 @@ def printBaristas(K,p,greedy) -> None:
                 lineWait += cost_fun(k)
                 numLine  += len(k.service_time)
             else:
-                queueWait += cost_fun(k) * ALPHA
+                queueWait += cost_fun(k)
                 numQueue  += len(k.service_time)
         else:
             if k.line:
-                lineWait += cost_fun_greedy(k)
+                lineWait += cost_fun(k)
                 numLine += len(k.service_time)
             else:
-                queueWait += cost_fun_greedy(k) * ALPHA
-                numQueue += len(k.service_time)
-    print("Line  Baristas served {patrons} with an average cost of {wait}".format(patrons = numLine,wait = lineWait))
-    print("Queue Baristas served {patrons} with an average cost of {wait}".format(patrons = numQueue,wait = queueWait))
+                queueWait += cost_fun(k)
+                numQueue += int(len(k.service_time) - 1) 
+        print_people(k)
+    print("Line  Baristas served {patrons} with an average cost of {wait}".format(patrons = numLine,wait = lineWait / 2))
+    print("Queue Baristas served {patrons} with an average cost of {wait}".format(patrons = numQueue,wait = (queueWait / 2) * 0.8))
 
 
-       
+"""
+Hire (Generate) Instances of baristas (k)
+"""
 def HumanResources(num_k,split):
     K = []
     for i in range(num_k):
@@ -423,15 +433,15 @@ def main():
    num_k = 4
    split = 0.5
    K = HumanResources(num_k=num_k,split=split)
-   rounds = 200
+   rounds = 100
    print()
    print("—>Random Simulation")
-   Random_simulation(K,rounds,0.5,200,2,3,False)
-   printBaristas(K,False,False)
+#    Random_simulation(K,rounds,0.5,200,2,3,False)
+#    printBaristas(K,False,False)
    print()
    print("—>Greedy Simulation")
    K = HumanResources(num_k=num_k,split=split)
-   Greedy_Simulation(K,rounds,0.5,200,2,3,False)
+   Greedy_Simulation(K,rounds,200,2,3,False)
    printBaristas(K,False,True)
 
 
