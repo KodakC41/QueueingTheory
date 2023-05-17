@@ -138,6 +138,21 @@ def cost_fun(K) -> float:
                 if j.ext != 0:
                     calc_wait+= (j.ext  - j.person.enter)
             return (calc_wait / counter) * ALPHA
+        
+def greedy_cost(K) -> int:
+    if len(K.service_time) > 1:
+        if K.line:
+            return len(K.service_time) * 3
+        else:
+            return len(K.service_time) * 3 * 0.8
+    else:
+        if K.line:
+            return 3
+        else:
+            return 2.4
+
+
+    
     
 """
 Calculate the cost but without alpha because each patron has already greedily measured cost by their alpha
@@ -175,7 +190,6 @@ cost    = cost per order for a patron (we set this to 3)
 """
 def genGreedyPatrons(enter,cost,K):
     selection  = greedy_selection(K)
-    
     return n(selection,enter,cost)
 
 
@@ -281,7 +295,6 @@ def greedy_selection(K):
     costs = []
     for k in K:
         costs.append(cost_fun(k))
-    print(costs)
     return K[costs.index(min(costs))].line
 
         
@@ -409,7 +422,7 @@ def printBaristas(K,p,greedy) -> None:
         else:
             if k.line:
                 lineWait += cost_fun(k)
-                numLine += len(k.service_time)
+                numLine += int(len(k.service_time))
             else:
                 queueWait += cost_fun(k)
                 numQueue += int(len(k.service_time) - 1) 
@@ -433,7 +446,7 @@ def main():
    num_k = 4
    split = 0.5
    K = HumanResources(num_k=num_k,split=split)
-   rounds = 100
+   rounds = 200
    print()
    print("—>Random Simulation")
 #    Random_simulation(K,rounds,0.5,200,2,3,False)
