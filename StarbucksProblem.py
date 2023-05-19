@@ -285,7 +285,6 @@ def greedy_selection(N,cost,alpha):
         return True
 
 
-        
 """
 Each person looks at their cost for joining each line as a function of their order 
 complexity and how many are in each line with a 50/50 split if a person joins the virtual queue they 
@@ -367,17 +366,17 @@ def printBaristas(K,p,greedy,cost,alpha) -> None:
     for k in K:
         if not greedy:
             if k.line:
-                lineWait += cost_fun(k,cost)
+                lineWait += cost_fun(k,cost,alpha)
                 numLine  += len(k.service_time)
             else:
-                queueWait += cost_fun(k,cost)
+                queueWait += cost_fun(k,cost,alpha)
                 numQueue  += len(k.service_time)
         else:
             if k.line:
-                lineWait += cost_fun(k,cost)
+                lineWait += cost_fun(k,cost,alpha)
                 numLine += int(len(k.service_time))
             else:
-                queueWait += cost_fun(k,cost)
+                queueWait += cost_fun(k,cost,alpha)
                 numQueue += int(len(k.service_time) - 1) 
     print("Line Baristas served {patrons} with an average cost of {wait}".format(patrons = numLine,wait = lineWait / 2))
     print("Queue Baristas served {patrons} with an average cost of {wait}".format(patrons = numQueue,wait = (queueWait / 2) * 0.8))
@@ -425,8 +424,8 @@ def main():
    K = HumanResources(num_k=num_k,div=split)
    print()
    print("—>Random Simulation")
-   Random_simulation(K,rounds,2,200,2,3,False)
-   printBaristas(K,False,False)
+   Random_simulation(K,rounds,0.6,200,2,3,False)
+   printBaristas(K,False,False,cost,alpha)
    print()
    print("—>Greedy Simulation")
    K = HumanResources(num_k=num_k,div=split)
