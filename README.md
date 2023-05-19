@@ -9,7 +9,7 @@ To better understand this, current research has abstrastacted this system into a
 4. Split — The division of labor between the Virutal and In Person Lines. 
 5. Rounds — How many "minutes" the simulation should last
 6. Cost — How long does each order take in clock time
-7. Reallocation — In unoccupied, can baristas from one line help complete orders from the other.
+7. Reallocation — If unoccupied, can baristas from one line help complete orders from the other.
 
 In examining these parameters we are able to observe how different divisions of labor and percieved conviniences costs can affect a person expected cost for waiting in one 
 line over another. 
