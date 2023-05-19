@@ -1,14 +1,29 @@
-# Patrons
+"""
+| The Starbucks Problem: Written for the Univeristy of Rochester Dept. Computer Science
+| Spring 2023 
+| This code demonstrates a cutomer's best payoff based on their percieved conviniece for a virtual queue against
+| the number of baristas to serve them and the cost of their order. 
+| most variables are adjustable including:
+| - alpha,
+| - cost,
+| - number of baristas, 
+| - number of patrons, 
+| - how many to serve virtual line vs. in person, 
+| - how many simulation rounds, 
+| - reallocation (T/F)
+| Change Log:
+|_Issue__|__Initials___|__Date_______|__Change_______
+|   1         CJB      |  03/2023    | Initial Version: greedy and random simulations
+"""
+
+# This code demonstrates that for some values of alpha where one over estimate the convience value 
+# of using mobile ordering their payoff can be worse than if they were to just get in line
+# This shows that for some percieved values of conviniences there need to be proportionally more baristas to 
+# serve a line with such a percieved value of convinience. 
+
 import uuid
 import random
 import argparse
-
-"""
-The alpha used if a person has had their drink made by a barista in the virtual queue. 
-"""
-ALPHA = 0.8
-COST  = 3
-
 
 """
 Patron Class
@@ -96,28 +111,15 @@ def occupy_Barista_realloc(n_i, K,time) -> bool:
 
 
 """
-Generate Baristas one at a time
-div      = The number of baristas of a type to generate
-num      = Current index of barista
-i        = Max number to generate 
-"""     
-def genBaristas(div,num,i):
-    if div * num <= i:
-        return k(False,i)
-    else:
-        return k(True,i)
-
-
-"""
 Calculate the cost after everyone has left the system (Posterior Cost)
 K        = List of Barists 
 """
-def cost_fun(K) -> float:
+def cost_fun(K,cost,alpha) -> float:
     counter = 0
     calc_wait = 0
     if K.line:
         if len(K.service_time) < 1:
-            return COST
+            return cost
         else:
             for j in K.service_time:
                 counter+=1
@@ -127,13 +129,13 @@ def cost_fun(K) -> float:
       
     else:
         if len(K.service_time) <= 1:
-            return COST * ALPHA
+            return cost * alpha
         else:
             for j in K.service_time:
                 counter+=1
                 if j.ext != 0:
                     calc_wait+= (j.ext  - j.person.enter)
-            return (calc_wait / counter) * ALPHA
+            return (calc_wait / counter) * alpha
         
 """
 Calculate the cost for a person entering a particular line based on those in line with them
@@ -151,19 +153,6 @@ def cost_prior(N,cost,alpha) -> float:
     queue_cost = queue_cost * (cost * alpha)
     return line_cost,queue_cost
     
-"""
-Calculate the cost but without alpha because each patron has already greedily measured cost by their alpha
-K        = List of Barists 
-"""
-def cost_fun_greedy(K) -> float:
-    counter = 0
-    calc_wait = 0
-    for j in K.service_time:
-        counter+=1
-        if j.ext != 0:
-                calc_wait+= (j.ext  - j.person.enter) 
-    return calc_wait / counter
-
 
 """
 Generate Patrons one at a time
@@ -297,8 +286,6 @@ def greedy_selection(N,cost,alpha):
 
 
         
-
-
 """
 Each person looks at their cost for joining each line as a function of their order 
 complexity and how many are in each line with a 50/50 split if a person joins the virtual queue they 
@@ -359,7 +346,7 @@ def is_unfinished(j) -> bool:
         return False
 
 """
-Print the people that have been helped by a certain barista... use at your own risk.
+TODO: Update to save as CSV: Print the people that have been helped by a certain barista... use at your own risk. 
 """
 def print_people(k) -> None:
     print("Barista {uuid} served: ".format(uuid = k.ident + 1))
@@ -372,7 +359,7 @@ def print_people(k) -> None:
                 else:
                     print("customer {uuid} with enter: {enter} and exit  {exit} from line {line}".format(uuid = i, enter = j.person.enter, exit = j.ext,line='q') )
 
-def printBaristas(K,p,greedy) -> None:
+def printBaristas(K,p,greedy,cost,alpha) -> None:
     queueWait = 0
     lineWait  = 0
     numQueue  = 0
@@ -380,42 +367,50 @@ def printBaristas(K,p,greedy) -> None:
     for k in K:
         if not greedy:
             if k.line:
-                lineWait += cost_fun(k)
+                lineWait += cost_fun(k,cost)
                 numLine  += len(k.service_time)
             else:
-                queueWait += cost_fun(k)
+                queueWait += cost_fun(k,cost)
                 numQueue  += len(k.service_time)
         else:
             if k.line:
-                lineWait += cost_fun(k)
+                lineWait += cost_fun(k,cost)
                 numLine += int(len(k.service_time))
             else:
-                queueWait += cost_fun(k)
+                queueWait += cost_fun(k,cost)
                 numQueue += int(len(k.service_time) - 1) 
     print("Line Baristas served {patrons} with an average cost of {wait}".format(patrons = numLine,wait = lineWait / 2))
     print("Queue Baristas served {patrons} with an average cost of {wait}".format(patrons = numQueue,wait = (queueWait / 2) * 0.8))
+
+"""
+Generate Baristas one at a time
+div      = The number of baristas of a type to generate
+num      = Current index of barista
+i        = Max number to generate 
+"""     
+def genBaristas(div,maxi,i):
+    if i < div:
+        return k(False,i)
+    elif i >= div and i <= maxi:
+        return k(True,i)
 
 
 """
 Hire (Generate) Instances of baristas (k)
 """
-def HumanResources(num_k,split):
+def HumanResources(num_k,div):
     K = []
     for i in range(num_k):
-      K.append(genBaristas(split,num_k,i))
+      K.append(genBaristas(div,num_k,i))
     return K
 
-
-
-# This code demonstrates that for some values of alpha where one over estimate the convience value 
-# of using mobile ordering their payoff can be worse than if they were to just get in line
 
 def main():
    parser = argparse.ArgumentParser()
    parser.add_argument("-k", "--baristanum", help="Number of Baristas",type=int,default=2)
    parser.add_argument("-n", "--customernum", help="Number of Customers",type=int,default=2)
    parser.add_argument("-r", "--rounds", help="Number of Rounds", type=int,default=200)
-   parser.add_argument("-s","--split",help="Split",type=float,default=0.5)
+   parser.add_argument("-s","--split",help="Split",type=float,default=1)
    parser.add_argument("-alloc","--reallocation",help="Allow Reallocation?",type=bool,default=False)
    parser.add_argument("-a","--alpha",help="Alpha (conviniece value)",type=float,default=0.8)
    parser.add_argument("-c","--cost",help="Cost per order",type=int,default=3)
@@ -426,18 +421,17 @@ def main():
    rounds  = args.rounds
    realloc = args.reallocation
    cost    = args.cost
-   alpha   = args.alpha
-   K = HumanResources(num_k=num_k,split=split)
-
+   alpha   = args.alpha 
+   K = HumanResources(num_k=num_k,div=split)
    print()
    print("—>Random Simulation")
-#    Random_simulation(K,rounds,0.5,200,2,3,False)
-#    printBaristas(K,False,False)
+   Random_simulation(K,rounds,2,200,2,3,False)
+   printBaristas(K,False,False)
    print()
    print("—>Greedy Simulation")
-   K = HumanResources(num_k=num_k,split=split)
+   K = HumanResources(num_k=num_k,div=split)
    Greedy_Simulation(K,rounds,1000,custNum,cost,realloc,alpha)
-   printBaristas(K,False,True)
+   printBaristas(K,False,True,cost,alpha)
 
 
 if __name__ == "__main__":
