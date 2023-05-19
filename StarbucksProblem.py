@@ -1,21 +1,14 @@
 # Patrons
 import uuid
 import random
+import argparse
 
 """
 The alpha used if a person has had their drink made by a barista in the virtual queue. 
 """
 ALPHA = 0.8
+COST  = 3
 
-# Average cost of each line TODO: Conflating True cost with percieved cost of waiting in each line 
-# The cost of each line should be calculated per person 
-# You are calculating wall clock times alpha in virtual queue 
-# Each line will just have one type of person there will not be a blend 
-# Once a person enters a line they become that type of person. 
-# That over complicates
-# 
-# In addition, you are allowing those who enter to only consider those who have already been served which, 
-# May be correct but is kind of a posterior look— this is not helpful — even a little  
 
 """
 Patron Class
@@ -124,7 +117,7 @@ def cost_fun(K) -> float:
     calc_wait = 0
     if K.line:
         if len(K.service_time) < 1:
-            return 3
+            return COST
         else:
             for j in K.service_time:
                 counter+=1
@@ -134,7 +127,7 @@ def cost_fun(K) -> float:
       
     else:
         if len(K.service_time) <= 1:
-            return 2.4
+            return COST * ALPHA
         else:
             for j in K.service_time:
                 counter+=1
@@ -154,8 +147,8 @@ def cost_prior(N) -> float:
             line_cost+=1
         else:
             queue_cost+=1
-    line_cost = line_cost * 3
-    queue_cost = queue_cost * 2.4
+    line_cost = line_cost * COST
+    queue_cost = queue_cost * (COST * ALPHA)
     return line_cost,queue_cost
     
 """
@@ -304,31 +297,6 @@ def greedy_selection(N):
 
 
         
-"""
-Allow a patron to select a line of their choice 
-n_i     = patron_i
-K       = list of baristas
-time    = clock time
-"""
-def greedy_selection_realloc(n_i, K,time) -> bool:
-    costs = []
-    if time > 2:
-        for k in K:
-            # Calculate average cost for each barista 
-            costs.append(cost_fun(k))
-        # print(costs)
-        n_i.setLine(K[costs.index(min(costs))].line)
-        if occupy_Barista_realloc(n_i,K,time):
-            n_i.setBeingServed(True)
-            return True
-        else:
-            return False
-    else:
-        if occupy_Barista_realloc(n_i,K,time):
-             n_i.setBeingServed(True)
-             return True
-        else:
-            return False
 
 
 """
@@ -365,7 +333,7 @@ def Greedy_Simulation(K,rounds,stopGenAt,howMantToGenEachRound,cost,realloc) -> 
                 freeBaristas(K,x,1)
             if x < stopGenAt:
                 for i in range(howMantToGenEachRound):
-                    N.append(genGreedyPatrons(x,cost,K))
+                    N.append(genGreedyPatrons(x,cost,K,N))
             for n in N:
                 if n.beingServed == False:
                     if occupy_Barista_realloc(n,K,time=x):
@@ -404,10 +372,6 @@ def print_people(k) -> None:
                 else:
                     print("customer {uuid} with enter: {enter} and exit  {exit} from line {line}".format(uuid = i, enter = j.person.enter, exit = j.ext,line='q') )
 
-
-# At the end of all of the rounds    
-# TODO make this print line and queue only rather than doing every barista   
-# TODO Average time for each type of customer 
 def printBaristas(K,p,greedy) -> None:
     queueWait = 0
     lineWait  = 0
@@ -444,10 +408,19 @@ def HumanResources(num_k,split):
 
 
 def main():
-   num_k = 4
-   split = 0.5
+   parser = argparse.ArgumentParser()
+   parser.add_argument("-k", "--baristanum", help="Number of Baristas",type=int,default=2)
+   parser.add_argument("-n", "--customernum", help="Number of Customers",type=int,default=2)
+   parser.add_argument("-r", "--rounds", help="Number of Rounds", type=int,default=200)
+   parser.add_argument("-s","--split",help="Split",type=float,default=0.5)
+   parser.add_argument("-alloc","--reallocation",help="Allow Reallocation?",type=bool,default=False)
+   args = parser.parse_args()
+   num_k = args.baristanum
+   split = args.split
+   custNum = args.customernum
    K = HumanResources(num_k=num_k,split=split)
-   rounds = 200
+   rounds = args.rounds
+   realloc = args.reallocation
    print()
    print("—>Random Simulation")
 #    Random_simulation(K,rounds,0.5,200,2,3,False)
@@ -455,7 +428,7 @@ def main():
    print()
    print("—>Greedy Simulation")
    K = HumanResources(num_k=num_k,split=split)
-   Greedy_Simulation(K,rounds,200,4,3,False)
+   Greedy_Simulation(K,rounds,1000,custNum,COST,realloc)
    printBaristas(K,False,True)
 
 
