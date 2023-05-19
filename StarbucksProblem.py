@@ -139,7 +139,7 @@ def cost_fun(K) -> float:
 Calculate the cost for a person entering a particular line based on those in line with them
 N        = List of Customers 
 """
-def cost_prior(N) -> float:
+def cost_prior(N,cost,alpha) -> float:
     line_cost  = 0
     queue_cost = 0
     for n in N:
@@ -147,8 +147,8 @@ def cost_prior(N) -> float:
             line_cost+=1
         else:
             queue_cost+=1
-    line_cost = line_cost * COST
-    queue_cost = queue_cost * (COST * ALPHA)
+    line_cost = line_cost * cost
+    queue_cost = queue_cost * (cost * alpha)
     return line_cost,queue_cost
     
 """
@@ -185,8 +185,8 @@ K       = List of Barista
 enter   = clock time upon entry
 cost    = cost per order for a patron (we set this to 3)
 """
-def genGreedyPatrons(enter,cost,K,N):
-    selection  = greedy_selection(N)
+def genGreedyPatrons(enter,cost,N,alpha):
+    selection  = greedy_selection(N,cost,alpha)
     return n(selection,enter,cost)
 
 
@@ -288,8 +288,8 @@ n_i     = patron_i
 K       = list of baristas
 time    = clock time
 """
-def greedy_selection(N):
-    lineCost,queueCost = cost_prior(N)
+def greedy_selection(N,cost,alpha):
+    lineCost,queueCost = cost_prior(N,cost,alpha)
     if lineCost > queueCost:
         return False
     else:
@@ -304,7 +304,7 @@ Each person looks at their cost for joining each line as a function of their ord
 complexity and how many are in each line with a 50/50 split if a person joins the virtual queue they 
 will incur a cost as a function of their alpha, otherwise they will just incur their pure cost as a function of nothing. 
 """
-def Greedy_Simulation(K,rounds,stopGenAt,howMantToGenEachRound,cost,realloc) -> None:
+def Greedy_Simulation(K,rounds,stopGenAt,howMantToGenEachRound,cost,realloc,alpha) -> None:
     x = 0
     N = [] 
     if not realloc:
@@ -313,7 +313,7 @@ def Greedy_Simulation(K,rounds,stopGenAt,howMantToGenEachRound,cost,realloc) -> 
             freeBaristas(K,x,1)
             if x < stopGenAt:
                 for i in range(howMantToGenEachRound):
-                    N.append(genGreedyPatrons(x,cost,K,N))
+                    N.append(genGreedyPatrons(x,cost,N,alpha))
             for n in N:
                 if n.beingServed == False:
                     if occupy_Barista(n,K,time=x):
@@ -407,6 +407,9 @@ def HumanResources(num_k,split):
 
 
 
+# This code demonstrates that for some values of alpha where one over estimate the convience value 
+# of using mobile ordering their payoff can be worse than if they were to just get in line
+
 def main():
    parser = argparse.ArgumentParser()
    parser.add_argument("-k", "--baristanum", help="Number of Baristas",type=int,default=2)
@@ -414,13 +417,18 @@ def main():
    parser.add_argument("-r", "--rounds", help="Number of Rounds", type=int,default=200)
    parser.add_argument("-s","--split",help="Split",type=float,default=0.5)
    parser.add_argument("-alloc","--reallocation",help="Allow Reallocation?",type=bool,default=False)
-   args = parser.parse_args()
-   num_k = args.baristanum
-   split = args.split
+   parser.add_argument("-a","--alpha",help="Alpha (conviniece value)",type=float,default=0.8)
+   parser.add_argument("-c","--cost",help="Cost per order",type=int,default=3)
+   args    = parser.parse_args()
+   num_k   = args.baristanum
+   split   = args.split
    custNum = args.customernum
-   K = HumanResources(num_k=num_k,split=split)
-   rounds = args.rounds
+   rounds  = args.rounds
    realloc = args.reallocation
+   cost    = args.cost
+   alpha   = args.alpha
+   K = HumanResources(num_k=num_k,split=split)
+
    print()
    print("—>Random Simulation")
 #    Random_simulation(K,rounds,0.5,200,2,3,False)
@@ -428,7 +436,7 @@ def main():
    print()
    print("—>Greedy Simulation")
    K = HumanResources(num_k=num_k,split=split)
-   Greedy_Simulation(K,rounds,1000,custNum,COST,realloc)
+   Greedy_Simulation(K,rounds,1000,custNum,cost,realloc,alpha)
    printBaristas(K,False,True)
 
 
