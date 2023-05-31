@@ -14,6 +14,7 @@
 | Change Log:
 |_Issue__|__Initials___|__Date_______|__Change_______
 |   1         CJB      |  03/2023    | Initial Version: greedy and random simulations
+|   2         CJB      |  05/2023    | Added Function to save baristas' patrons to a CSV for later use
 """
 
 # This code demonstrates that for some values of alpha where one over estimate the convience value 
@@ -345,7 +346,7 @@ def is_unfinished(j) -> bool:
         return False
 
 """
-TODO: Update to save as CSV: Print the people that have been helped by a certain barista... use at your own risk. 
+Saves a list of baristas and those they have served to a CSV file 
 """
 def print_people(K) -> None:
     # print("Barista {uuid} served: ".format(uuid = k.ident + 1))
@@ -366,8 +367,10 @@ def print_people(K) -> None:
                         # print("customer {uuid} with enter: {enter} and exit  {exit} from line {line}".format(uuid = i, enter = j.person.enter, exit = j.ext,line='q') )
                         writer.writerow([k.ident,i,j.person.enter,j.ext,"0"])
         
-    
-
+"""
+Prints the used baristas and the average cost incurred by the patrons in their lines
+- Optional function to save the baristas and those they have served to a .csv file. 
+"""
 def printBaristas(K,p,greedy,cost,alpha) -> None:
     queueWait = 0
     lineWait  = 0
