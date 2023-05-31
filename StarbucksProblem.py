@@ -24,6 +24,7 @@
 import uuid
 import random
 import argparse
+import csv
 
 """
 Patron Class
@@ -346,16 +347,26 @@ def is_unfinished(j) -> bool:
 """
 TODO: Update to save as CSV: Print the people that have been helped by a certain barista... use at your own risk. 
 """
-def print_people(k) -> None:
-    print("Barista {uuid} served: ".format(uuid = k.ident + 1))
+def print_people(K) -> None:
+    # print("Barista {uuid} served: ".format(uuid = k.ident + 1))
     i = 0
-    for j in k.service_time:
-            i+=1
-            if is_unfinished(j) == False:
-                if j.person.line:
-                    print("customer {uuid} with enter: {enter} and exit  {exit} from line {line}".format(uuid = i, enter = j.person.enter, exit = j.ext,line='l'))
-                else:
-                    print("customer {uuid} with enter: {enter} and exit  {exit} from line {line}".format(uuid = i, enter = j.person.enter, exit = j.ext,line='q') )
+    
+    with open('customers_served.csv', 'w', newline='') as file:
+        writer = csv.writer(file)
+        field = ["Barista","Patron","Enter", "Exit","Line"]
+        writer.writerow(field)
+        for k in K:
+            for j in k.service_time:
+                i+=1
+                if is_unfinished(j) == False:
+                    if j.person.line:
+                        writer.writerow([k.ident,i,j.person.enter,j.ext,"1"])
+                        # print("customer {uuid} with enter: {enter} and exit  {exit} from line {line}".format(uuid = i, enter = j.person.enter, exit = j.ext,line='l'))
+                    else:
+                        # print("customer {uuid} with enter: {enter} and exit  {exit} from line {line}".format(uuid = i, enter = j.person.enter, exit = j.ext,line='q') )
+                        writer.writerow([k.ident,i,j.person.enter,j.ext,"0"])
+        
+    
 
 def printBaristas(K,p,greedy,cost,alpha) -> None:
     queueWait = 0
@@ -377,8 +388,10 @@ def printBaristas(K,p,greedy,cost,alpha) -> None:
             else:
                 queueWait += cost_fun(k,cost,alpha)
                 numQueue += int(len(k.service_time) - 1) 
-    print("Line Baristas served {patrons} with an average cost of {wait}".format(patrons = numLine,wait = lineWait / 2))
-    print("Queue Baristas served {patrons} with an average cost of {wait}".format(patrons = numQueue,wait = (queueWait / 2) * 0.8))
+    print("Line Baristas served {patrons} with an average cost of {wait}".format(patrons = numLine,wait = round(lineWait / 2)))
+    print("Queue Baristas served {patrons} with an average cost of {wait}".format(patrons = numQueue,wait = round((queueWait / 2) * 0.8)))
+    if p:
+        print_people(K)
 
 """
 Generate Baristas one at a time
