@@ -30,11 +30,11 @@ Patron Class
 """
 class n:
     ident = uuid.uuid1() # UUID might be a little overkill
-    line  = bool() # 
-    enter = int()
-    cost  = 5 # An agent's associated cost for waiting in line
-    beingServed = False
-    alpha = 0.8 # is part of the virtual Queue only
+    line  = bool()       # which line a patron is in
+    enter = int()        # The Time at which the patron enters. 
+    cost  = 5            # An agent's associated cost for waiting in line
+    beingServed = False  # Is a Patron being served
+    alpha = 0.8          # is part of the virtual Queue only
     def __init__(self,line,enter,cost) -> None:
         self.ident = uuid.uuid1()
         self.line = line
@@ -53,16 +53,15 @@ class n:
 Worker Class
 """ 
 class k:
-    indent = uuid.uuid1()
-    line = bool()
-    occupied = bool()
-    service_time = []
+    indent = uuid.uuid1() # (Again) UUID may be a little overkill
+    line = bool()         # True or false depending on which line a person is in
+    occupied = bool()     # Is this barista currently serving anyone?
+    service_time = []     # A list of the people a barista has served as an array of N patrons (n)
     def __init__(self,line,i) -> None:
         self.ident = i
         self.line = line
         self.service_time = []
         self.occupied = False
-
     def setOccupied(self,b):
         self.occupied = b
 
