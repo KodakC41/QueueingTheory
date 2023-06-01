@@ -11,8 +11,8 @@ To better understand this, current research has abstracted this system into a ca
 6. Cost — How long does each order take in clock time
 7. Reallocation — If unoccupied, can baristas from one line help complete orders from the other.
 8. Gamma — How much more an expensive order cost than a normal order
-9. Prob  — What is the probability of orders being expensive 
-10. Myopic — Are people in line able to see if a person has an expensive order or not
+9. Lambda  — What is the probability of orders being expensive 
+10.Myopic — Are people in line able to see if a person has an expensive order or not
 
 In examining these parameters we are able to observe how different divisions of labor and perceived conveniences costs can affect a person expected cost for waiting in one 
 line over another. 
