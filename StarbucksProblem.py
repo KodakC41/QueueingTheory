@@ -694,11 +694,11 @@ def main():
     parser.add_argument("-save_sim","--save_sim",help="Should the simulation be saved to an output file?",action=argparse.BooleanOptionalAction,default=False)
     
     # What type of simulation should be run?
-    parser.add_argument('--use_gamma',             action=argparse.BooleanOptionalAction,default=False)
-    parser.add_argument('--myopic',                action=argparse.BooleanOptionalAction,default=False)
-    parser.add_argument('--both',                  action=argparse.BooleanOptionalAction,default=False)
-    parser.add_argument('--all',                   action=argparse.BooleanOptionalAction,default=False) # Run with Gamma, random, and without Gamma
-    parser.add_argument("--random",                action=argparse.BooleanOptionalAction,default=False)
+    parser.add_argument('--use_gamma',             action=argparse.BooleanOptionalAction,default=False,help="Use Gamma or not")
+    parser.add_argument('--myopic',                action=argparse.BooleanOptionalAction,default=False,help="Are Patrons Myopic or not?")
+    parser.add_argument('--both',                  action=argparse.BooleanOptionalAction,default=False,help="Run both Greedy case that use gamma or not")
+    parser.add_argument('--all',                   action=argparse.BooleanOptionalAction,default=False,help="Run all Simulations") # Run with Gamma, random, and without Gamma
+    parser.add_argument("--random",                action=argparse.BooleanOptionalAction,default=False,help="Run the random simulation")
 
     args      = parser.parse_args()
 
