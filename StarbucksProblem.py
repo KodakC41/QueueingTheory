@@ -408,7 +408,7 @@ def Greedy_Simulation(K, rounds, stopGenAt, howMantToGenEachRound, cost, realloc
                 freeBaristas(K, x, 1)
             if x < stopGenAt:
                 for i in range(howMantToGenEachRound):
-                    N.append(genGreedyPatrons(x, cost, K, N))
+                    N.append(genGreedyPatrons(x, cost, N, alpha))
             for n in N:
                 if n.beingServed == False:
                     if occupy_Barista_realloc(n, K, time=x):
@@ -676,8 +676,7 @@ def main():
     parser.add_argument(
         "-r", "--rounds", help="Number of Rounds", type=int, default=200)
     parser.add_argument("-s", "--split", help="Split", type=float, default=1)
-    parser.add_argument("-alloc", "--reallocation",
-                        help="Allow Reallocation?", type=bool, default=False)
+    parser.add_argument('--reallocation',             action=argparse.BooleanOptionalAction,default=False,help="Allow Reallocation?")
     parser.add_argument(
         "-a", "--alpha", help="Alpha (conviniece value)", type=float, default=0.8)
     parser.add_argument(
