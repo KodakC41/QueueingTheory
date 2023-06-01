@@ -12,9 +12,10 @@
 | - how many simulation rounds, 
 | - reallocation (T/F)
 | Change Log:
-|_Issue__|__Initials___|__Date_______|__Change_______
-|   1         CJB      |  03/2023    | Initial Version: greedy and random simulations
-|   2         CJB      |  05/2023    | Added Function to save baristas' patrons to a CSV for later use
+|_Issue__|__Initials___|__Date_______|__Change__
+|   1    |    CJB      |  03/2023    | Initial Version: greedy and random simulations
+|   2    |    CJB      |  05/2023    | Added Function to save baristas' patrons to a CSV for later use
+|   3    |    CJB      |  06/2023    | 
 """
 
 # This code demonstrates that for some values of alpha where one over estimate the convience value 
@@ -26,29 +27,39 @@ import uuid
 import random
 import argparse
 import csv
+import numpy
 
 """
 Patron Class
 """
 class n:
-    ident = uuid.uuid1() # UUID might be a little overkill
-    line  = bool()       # which line a patron is in
-    enter = int()        # The Time at which the patron enters. 
-    cost  = 5            # An agent's associated cost for waiting in line
-    beingServed = False  # Is a Patron being served
-    alpha = 0.8          # is part of the virtual Queue only
-    def __init__(self,line,enter,cost) -> None:
+    ident = uuid.uuid1()       # UUID might be a little overkill
+    line  = bool()             # which line a patron is in
+    enter = int()              # The Time at which the patron enters. 
+    cost  = 5                  # An agent's associated cost for waiting in line
+    beingServed = False        # Is a Patron being served
+    alpha = 0.8                # is part of the virtual Queue only
+    gamma   = 1.2              # The Gamma component that makes an order more expensive by time
+    hasExpensiveOrder = bool() # does Gamma come in account?
+    def __init__(self,line,enter,cost,exp=False,gam=1) -> None:
         self.ident = uuid.uuid1()
         self.line = line
         self.enter = enter
         self.ext   = 0
-        self.cost = cost
+        self.gamma = gam
+        if exp:
+            self.hasExpensiveOrder = True
+            self.cost = cost * self.gamma
+        else:
+            self.cost = cost
     def setBeingServed(self,b):
         self.beingServed = b
     def is_being_served(self):
         return self.beingServed
     def setLine(self,l):
         self.line= l
+    def hasExpensive(self):
+        return self.hasExpensiveOrder
 
 
 """
@@ -154,6 +165,29 @@ def cost_prior(N,cost,alpha) -> float:
     queue_cost = queue_cost * (cost * alpha)
     return line_cost,queue_cost
     
+"""
+Omnicient Ordering where expensive orders are taken into account by those entering the system
+This takes into account the variable Gamma
+"""
+def cost_prior_Omni(N,cost,alpha) -> float:
+    line_cost  = 0
+    queue_cost = 0
+
+    for n in N:
+        if n.line:
+            if n.hasExpensive():
+                line_cost+= n.gamma
+            else:
+                line_cost+=1
+        else:
+            if n.hasExpensive():
+                queue_cost+=n.gamma
+            else:
+                queue_cost+=1
+   
+    line_cost = line_cost * cost
+    queue_cost = queue_cost * (cost * alpha)
+    return line_cost,queue_cost
 
 """
 Generate Patrons one at a time
@@ -197,6 +231,12 @@ time     = Clock time
 def freeBaristas(K,time,service_time):
     for k in K:
         if k.occupied == True and k.service_time[len(k.service_time)-1].start +  k.service_time[len(k.service_time)-1].person.cost  == time:
+            k.setOccupied(False)
+            k.service_time[len(k.service_time)-1].ext = time
+
+def freeBarista_with_gamma(K,time):
+    for k in K:
+        if k.occupied == True and k.service_time[len(k.service_time) - 1].start + k.service_time[len(k.service_time)-1].person.cost <= time:
             k.setOccupied(False)
             k.service_time[len(k.service_time)-1].ext = time
 
@@ -335,6 +375,72 @@ def Greedy_Simulation(K,rounds,stopGenAt,howMantToGenEachRound,cost,realloc,alph
                     if occupy_Barista_realloc(n,K,time=x):
                         n.setBeingServed(True)
 
+"""
+returns whether an order is expensive or not 
+takes: probability of expensive
+       number of simulation rounds
+       how many are generated each round
+       which gives a value between 0 and the total number of patrons
+       if the number generated randomly is less than the probability of a patron having an expensive order times the total number of patrons the order is expensive 
+       else the order is regular. 
+       Example: 
+            30% are expensive, 
+            there are 50 rounds, 
+            generating 2 per round. 
+            This would mean if the random value falls less than 30 then the order is expensive, otherwise the order is normal. 
+"""
+def is_expensive(prob,rounds,howManyToGenEachRound):
+    total = rounds * howManyToGenEachRound
+    r = random.randint(0,total)
+    split = prob * total
+    if r < split:
+        return True
+    else:
+        return False
+
+def Omni_Gamma_Greedy_Simulation(K,rounds,stopGenAt,howMantToGenEachRound,cost,realloc,alpha,gamma,prob_expensive,myopic) -> None:
+    x = 0
+    N = [] 
+    if not realloc:
+        while x <= rounds:
+            x+=1
+            freeBarista_with_gamma(K,x)
+            if x < stopGenAt:
+                for i in range(howMantToGenEachRound):
+                    N.append(genGammaPatrons(x,cost,N,alpha,gamma,is_expensive(prob_expensive,rounds,howMantToGenEachRound),myopic))
+            for n in N:
+                if n.beingServed == False:
+                    if occupy_Barista(n,K,time=x):
+                        n.setBeingServed(True)
+        while has_unserved_patron(N):
+            x+=1
+            freeBarista_with_gamma(K,x)
+            for n in N:
+                if n.beingServed == False:
+                    if occupy_Barista(n,K,time=x):
+                        n.setBeingServed(True)
+    if realloc:
+        while x < rounds:
+            x+=1
+            service_time = 1
+            if x % service_time == 0:
+                freeBarista_with_gamma(K,x)
+            if x < stopGenAt:
+                for i in range(howMantToGenEachRound):
+                    N.append(genGammaPatrons(x,cost,N,alpha,gamma,is_expensive(prob_expensive,rounds,howMantToGenEachRound),myopic))
+            for n in N:
+                if n.beingServed == False:
+                    if occupy_Barista_realloc(n,K,time=x):
+                        n.setBeingServed(True)
+        while has_unserved_patron(N):
+            x+=1
+            service_time = 1
+            if x % service_time == 0:
+                    freeBarista_with_gamma(K,x)
+            for n in N:
+                if n.beingServed == False:
+                    if occupy_Barista_realloc(n,K,time=x):
+                        n.setBeingServed(True)
 
 """
 Has a patron had their drink finished?
@@ -354,18 +460,20 @@ def print_people(K) -> None:
     
     with open('customers_served.csv', 'w', newline='') as file:
         writer = csv.writer(file)
-        field = ["Barista","Patron","Enter", "Exit","Line"]
+        field = ["Barista","Patron","Enter","Cost","Exit","Line","Final Cost"]
         writer.writerow(field)
         for k in K:
             for j in k.service_time:
                 i+=1
                 if is_unfinished(j) == False:
                     if j.person.line:
-                        writer.writerow([k.ident,i,j.person.enter,j.ext,"1"])
+                        ext = j.ext - j.person.enter
+                        writer.writerow([k.ident,i,j.person.enter,j.person.cost,j.ext,"line",ext])
                         # print("customer {uuid} with enter: {enter} and exit  {exit} from line {line}".format(uuid = i, enter = j.person.enter, exit = j.ext,line='l'))
                     else:
                         # print("customer {uuid} with enter: {enter} and exit  {exit} from line {line}".format(uuid = i, enter = j.person.enter, exit = j.ext,line='q') )
-                        writer.writerow([k.ident,i,j.person.enter,j.ext,"0"])
+                        ext = j.ext - j.person.enter
+                        writer.writerow([k.ident,i,j.person.enter,j.person.cost,j.ext,"queue",ext])
         
 """
 Prints the used baristas and the average cost incurred by the patrons in their lines
@@ -396,6 +504,31 @@ def printBaristas(K,p,greedy,cost,alpha) -> None:
     if p:
         print_people(K)
 
+def printBaristas(K,p,greedy,cost,alpha) -> None:
+    queueWait = 0
+    lineWait  = 0
+    numQueue  = 0
+    numLine   = 0
+    for k in K:
+        if not greedy:
+            if k.line:
+                lineWait += cost_fun(k,cost,alpha)
+                numLine  += len(k.service_time)
+            else:
+                queueWait += cost_fun(k,cost,alpha)
+                numQueue  += len(k.service_time)
+        else:
+            if k.line:
+                lineWait += cost_fun(k,cost,alpha)
+                numLine += int(len(k.service_time))
+            else:
+                queueWait += cost_fun(k,cost,alpha)
+                numQueue += int(len(k.service_time)) 
+    print("Line Baristas served {patrons} with an average cost of {wait}".format(patrons = numLine,wait = round(lineWait)))
+    print("Queue Baristas served {patrons} with an average cost of {wait}".format(patrons = numQueue,wait = round((queueWait) * 0.8)))
+    if p:
+        print_people(K)
+
 """
 Generate Baristas one at a time
 div      = The number of baristas of a type to generate
@@ -408,7 +541,28 @@ def genBaristas(div,maxi,i):
     elif i >= div and i <= maxi:
         return k(True,i)
 
+def greedy_selection_gamma(N,cost,alpha):
+    lineCost,queueCost = cost_prior_Omni(N,cost,alpha)
+    if lineCost > queueCost:
+        return False
+    else:
+        return True
+    
+def myopic_greedy_selection_gamma(N,cost,alpha):
+    lineCost,queueCost = cost_prior(N,cost,alpha)
+    if lineCost > queueCost:
+        return False
+    else:
+        return True
 
+def genGammaPatrons(enter,cost,N,alpha,gamma,useGamma,myopic):
+   if myopic:
+        selection  = greedy_selection_gamma(N,cost,alpha)
+        return n(selection,enter,cost,exp =useGamma,gam = gamma)
+   else:
+        selection  = myopic_greedy_selection_gamma(N,cost,alpha)
+        return n(selection,enter,cost,exp =useGamma,gam = gamma)
+       
 """
 Hire (Generate) Instances of baristas (k)
 """
@@ -428,6 +582,10 @@ def main():
    parser.add_argument("-alloc","--reallocation",help="Allow Reallocation?",type=bool,default=False)
    parser.add_argument("-a","--alpha",help="Alpha (conviniece value)",type=float,default=0.8)
    parser.add_argument("-c","--cost",help="Cost per order",type=int,default=3)
+   parser.add_argument("-b","--beta",help="How many to add to the system (Beta)",type=float,default=1.0) 
+   parser.add_argument("-g","--gamma",help="How expensive is an expensiver order (Gamma)",type=float,default=1.0)
+   parser.add_argument("-p","--prob",help="What is the liklihood of a person having an expensive order",type=float,default=1.0)
+   parser.add_argument("-m","--myopic",help="Are the patrons unable to discern difficult orders from regular orders?",type=bool,default=True)
    args    = parser.parse_args()
    num_k   = args.baristanum
    split   = args.split
@@ -436,17 +594,21 @@ def main():
    realloc = args.reallocation
    cost    = args.cost
    alpha   = args.alpha 
+   beta    = args.beta # TODO Beta.
+   gamma   = args.gamma
+   myopic = args.myopic
+   prob   = args.prob
    K = HumanResources(num_k=num_k,div=split)
    print()
    print("—>Random Simulation")
-   Random_simulation(K,rounds,0.6,200,2,3,False)
+   Random_simulation(K,rounds,alpha,200,2,3,False)
    printBaristas(K,False,False,cost,alpha)
    print()
    print("—>Greedy Simulation")
+   #Omni_Gamma_Greedy_Simulation(K,rounds,1000,custNum,cost,realloc,alpha,gamma,prob,myopic)
    K = HumanResources(num_k=num_k,div=split)
    Greedy_Simulation(K,rounds,1000,custNum,cost,realloc,alpha)
-   printBaristas(K,False,True,cost,alpha)
-
+   printBaristas(K,True,True,cost,alpha)
 
 if __name__ == "__main__":
     main()
