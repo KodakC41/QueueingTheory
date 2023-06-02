@@ -614,24 +614,16 @@ def printBaristas(K, p, greedy, cost, alpha,reallocation) -> None:
         numQueue  = 0
         numLine   = 0
         for k in K:
-            if not greedy:
-                if k.line:
-                    lineWait += cost_fun(k, cost, alpha)
-                    numLine += len(k.service_time)
-                else:
-                    queueWait += cost_fun(k, cost, alpha)
-                    numQueue += len(k.service_time)
+            if k.line == True:
+                lineWait += cost_fun(k, cost, alpha)
+                numLine  += int(len(k.service_time))
             else:
-                if k.line:
-                    lineWait += cost_fun(k, cost, alpha)
-                    numLine += int(len(k.service_time))
-                else:
-                    queueWait += cost_fun(k, cost, alpha)
-                    numQueue += int(len(k.service_time) - 1)
+                queueWait += cost_fun(k, cost, alpha)
+                numQueue  += int(len(k.service_time))
         print("Line Baristas served {patrons} with an average cost of {wait}".format(
             patrons=numLine, wait=round(lineWait)))
-        print("Queue Baristas served {patrons} with an average cost of {wait}".format(
-            patrons=numQueue, wait=round((queueWait * alpha))))
+        print("Queue Baristas served {patrons} with an average perceived cost of {wait} and with an actualized cost of {actual}".format(
+            patrons=numQueue, wait=round((queueWait * alpha)),actual=round(queueWait)))
         if p:
             print_people(K)
     else:
