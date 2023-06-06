@@ -130,12 +130,12 @@ Is the line a barista is serving shorter than the other line? Then we allow real
 """
 def allowed_to_reallocate(k,numLine,numQueue):
     if k.line == True:
-        if numQueue < numLine:
+        if numLine == 0:
             return True
         else:
             return False
     else:
-        if numLine < numQueue:
+        if numQueue == True:
             return True
         else:
             return False
@@ -247,21 +247,22 @@ This takes into account the variable Gamma
 def cost_prior_Omni(N, cost, alpha) -> float:
     line_cost = 0
     queue_cost = 0
-
     for n in N:
         if n.line:
-            if n.hasExpensive():
-                line_cost += n.gamma
-            else:
-                line_cost += 1
+            if n.beingServed == False:
+                if n.hasExpensive():
+                    line_cost += n.gamma
+                else:
+                    line_cost += 1
         else:
-            if n.hasExpensive():
-                queue_cost += n.gamma
-            else:
-                queue_cost += 1
-
+            if n.beingServed == False:
+                if n.hasExpensive():
+                    queue_cost += n.gamma
+                else:
+                    queue_cost += 1
+   
     line_cost = line_cost * cost
-    queue_cost = queue_cost * (cost * alpha)
+    queue_cost = queue_cost * cost * alpha
     return line_cost, queue_cost
 
 
@@ -498,11 +499,11 @@ takes: probability of expensive
 """
 
 
-def is_expensive(prob, rounds, howManyToGenEachRound):
-    total = rounds * howManyToGenEachRound
-    r = random.randint(0, total)
-    split = prob * total
-    if r < split:
+def is_expensive(prob, rounds, howManyToGenEachRound,i):
+    # total = rounds * howManyToGenEachRound
+    # r = random.randint(0, total)
+    # split = prob * total
+    if i % 2 != 0:
         return True
     else:
         return False
@@ -518,7 +519,7 @@ def Omni_Gamma_Greedy_Simulation(K, rounds, stopGenAt, howMantToGenEachRound, co
             if x < stopGenAt:
                 for i in range(howMantToGenEachRound):
                     N.append(genGammaPatrons(x, cost, N, alpha, gamma, is_expensive(
-                        prob_expensive, rounds, howMantToGenEachRound), myopic))
+                        prob_expensive, rounds, howMantToGenEachRound,i), myopic))
             for n in N:
                 if n.beingServed == False:
                     if occupy_Barista(n, K, time=x):
@@ -539,7 +540,7 @@ def Omni_Gamma_Greedy_Simulation(K, rounds, stopGenAt, howMantToGenEachRound, co
             if x < stopGenAt:
                 for i in range(howMantToGenEachRound):
                     N.append(genGammaPatrons(x, cost, N, alpha, gamma, is_expensive(
-                        prob_expensive, rounds, howMantToGenEachRound), myopic))
+                        prob_expensive, rounds, howMantToGenEachRound,i), myopic))
             for n in N:
                 if n.beingServed == False:
                     if occupy_Barista_realloc(N,n, K, time=x):
@@ -613,17 +614,22 @@ def printBaristas(K, p, greedy, cost, alpha,reallocation) -> None:
         lineWait  = 0
         numQueue  = 0
         numLine   = 0
+        numExpensiveQ = 0
+        numExpensiveL = 0
         for k in K:
             if k.line == True:
                 lineWait += cost_fun(k, cost, alpha)
                 numLine  += int(len(k.service_time))
+                numExpensiveL+=countExpensive(k)
             else:
                 queueWait += cost_fun(k, cost, alpha)
                 numQueue  += int(len(k.service_time))
+                numExpensiveQ+=countExpensive(k)
         print("Line Baristas served {patrons} with an average cost of {wait}".format(
             patrons=numLine, wait=round(lineWait)))
-        print("Queue Baristas served {patrons} with an average perceived cost of {wait} and with an actualized cost of {actual}".format(
+        print("Queue Baristas served {patrons} with an average perceived cost of {wait} and with an average time cost of {actual}".format(
             patrons=numQueue, wait=round((queueWait * alpha)),actual=round(queueWait)))
+        print("The line barista(s) served {l} complex orders and the queue barista(s) served {q}".format(l = numExpensiveL,q = numExpensiveQ))
         if p:
             print_people(K)
     else:
@@ -749,12 +755,12 @@ def main():
         print("—>Greedy Simulation")
         K = HumanResources(num_k=num_k, div=split)
         Omni_Gamma_Greedy_Simulation(K,rounds,1000,custNum,cost,realloc,alpha,gamma,lam,myopic)
-        printBaristas(K,True,True,cost,alpha,realloc)
+        printBaristas(K,True,True,cost,alpha,False)
     elif withGamma == False and not Both and not All and not rand: # Default
         print("—>Greedy Simulation")
         K = HumanResources(num_k=num_k, div=split)
         Greedy_Simulation(K, rounds, 1000, custNum, cost, realloc, alpha)
-        printBaristas(K, True, True, cost, alpha,realloc)
+        printBaristas(K, True, True, cost, alpha,False)
     elif Both and not All and not rand:
         print("—>Greedy Simulation without Gamma")
         K = HumanResources(num_k=num_k, div=split)
