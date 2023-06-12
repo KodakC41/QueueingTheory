@@ -18,6 +18,7 @@
 |   3    |    CJB      |  06/2023    | Added Lambda and Gamma parameters and created new simulations to show their impacts. Beta was not added with this issue. 
 |   6    |    CJB      |  06/2023    | Update Dyanmic cost fuction to give patrons more complete information, this also fixes bugs with reallocation costs as well. 
 |        |             |             | Also added some arguments that will allow the simulation to be saved. 
+|   7    |    CJB      |  06/2023    | Added Beta and change print functions
 """
 
 import uuid
