@@ -397,7 +397,7 @@ realloc   = true or false to allow reallocation
 def Random_simulation(K, rounds, div, stopGenAt, howMantToGenEachRound, cost, realloc,queue_active,use_beta,beta) -> None:
     x = 0
     N = []
-    if use_beta ==  True:
+    if use_beta ==  True and queue_active == True:
         howMantToGenEachRound += beta
     if not realloc:
         while x <= rounds:
@@ -473,7 +473,7 @@ will incur a cost as a function of their alpha, otherwise they will just incur t
 def Greedy_Simulation(K, rounds, stopGenAt, howMantToGenEachRound, cost, realloc, alpha,queue_active,use_beta,beta) -> None:
     x = 0
     N = []
-    if use_beta ==  True:
+    if use_beta ==  True and queue_active == True:
         howMantToGenEachRound += beta
     if not realloc:
         while x <= rounds:
@@ -548,7 +548,7 @@ def is_expensive(prob, rounds, howManyToGenEachRound, i):
 def Omni_Gamma_Greedy_Simulation(K, rounds, stopGenAt, howMantToGenEachRound, cost, realloc, alpha, gamma, prob_expensive, myopic,queue_active,use_beta,beta) -> None:
     x = 0
     N = []
-    if use_beta ==  True:
+    if use_beta ==  True and queue_active == True:
         howMantToGenEachRound += beta
     if not realloc:
         while x <= rounds:
