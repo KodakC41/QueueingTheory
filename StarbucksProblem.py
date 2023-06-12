@@ -15,7 +15,8 @@
 |_Issue__|__Initials___|__Date_______|__Change__
 |   1    |    CJB      |  03/2023    | Initial Version: greedy and random simulations
 |   2    |    CJB      |  05/2023    | Added Function to save baristas' patrons to a CSV for later use
-|   3    |    CJB      |  06/2023    | Added Lambda and Gamma parameters and created new simulations to show their impacts. 
+|   3    |    CJB      |  06/2023    | Added Lambda and Gamma parameters and created new simulations to show their impacts. Beta was not added with this issue. 
+|   6    |    CJB      |  06/2023    | Update Dyanmic cost fuction to give patrons more complete information, this also fixes bugs with reallocation costs as well. 
 """
 
 # This code demonstrates that for some values of alpha where one over estimate the convience value
@@ -167,7 +168,7 @@ def occupy_Barista_realloc(N,n_i, K, time) -> bool:
     return b
 
 
-
+# This is the cost function for reallocation, it requires a lot of book keeping. 
 def realloc_cost_fun(K,alpha):
     line_cost        = 0 # cost of a person who joined the line
     queue_cost       = 0 # cost of a person who joined the queue
@@ -393,7 +394,7 @@ def Random_simulation(K, rounds, div, stopGenAt, howMantToGenEachRound, cost, re
             x += 1
             service_time = 1
             if x % service_time == 0:
-                freeBaristas(K, x, service_time)
+                freeBaristas(K, x)
             if x < stopGenAt:
                 for i in range(howMantToGenEachRound):
                     N.append(genPatronsRandom(
@@ -402,11 +403,11 @@ def Random_simulation(K, rounds, div, stopGenAt, howMantToGenEachRound, cost, re
                 if n.beingServed == False:
                     if occupy_Barista(n, K, time=x):
                         n.setBeingServed(True)
-        while has_unserved_patron(N):
+        while has_unserved_patron(N,K):
             x += 1
             service_time = 1
             if x % service_time == 0:
-                freeBaristas(K, x, service_time)
+                freeBaristas(K, x)
             for n in N:
                 if n.beingServed == False:
                     if occupy_Barista(n, K, time=x):
@@ -416,7 +417,7 @@ def Random_simulation(K, rounds, div, stopGenAt, howMantToGenEachRound, cost, re
             x += 1
             service_time = 1
             if x % service_time == 0:
-                freeBaristas(K, x, service_time)
+                freeBaristas(K, x)
             if x < stopGenAt:
                 for i in range(howMantToGenEachRound):
                     N.append(genPatronsRandom(
@@ -429,7 +430,7 @@ def Random_simulation(K, rounds, div, stopGenAt, howMantToGenEachRound, cost, re
             x += 1
             service_time = 1
             if x % service_time == 0:
-                freeBaristas(K, x, service_time)
+                freeBaristas(K, x)
             for n in N:
                 if n.beingServed == False:
                     if occupy_Barista_realloc(N,n, K, time=x) == True:
@@ -548,7 +549,7 @@ def Omni_Gamma_Greedy_Simulation(K, rounds, stopGenAt, howMantToGenEachRound, co
                 if n.beingServed == False:
                     if occupy_Barista(n, K, time=x):
                         n.setBeingServed(True)
-        while has_unserved_patron(N):
+        while has_unserved_patron(N,K):
             x += 1
             freeBarista_with_gamma(K, x)
             for n in N:
@@ -572,7 +573,7 @@ def Omni_Gamma_Greedy_Simulation(K, rounds, stopGenAt, howMantToGenEachRound, co
                     else:
                         if occupy_Barista(n,K,time=x):
                             n.setBeingServed(True)
-        while has_unserved_patron(N):
+        while has_unserved_patron(N,K):
             x += 1
             service_time = 1
             if x % service_time == 0:
@@ -632,7 +633,7 @@ Prints the used baristas and the average cost incurred by the patrons in their l
 """
 
 
-def printBaristas(K, p, greedy, cost, alpha,reallocation) -> None:
+def printBaristas(K, p, cost, alpha,reallocation) -> None:
     if reallocation != True:
         queueWait = 0
         lineWait  = 0
@@ -749,7 +750,7 @@ def main():
     
     # File Save Stuff
     parser.add_argument("-filename","--file_path",help="Where shoudld the output file be saved?",type=str,default="customers_served") # TODO Make this work
-    parser.add_argument("-save_sim","--save_sim",help="Should the simulation be saved to an output file?",action=argparse.BooleanOptionalAction,default=False)
+    parser.add_argument("-save_sim","--save_sim", help="Should the simulation be saved to an output file?",action=argparse.BooleanOptionalAction,default=False) # TODO Make this work
     
     # What type of simulation should be run?
     parser.add_argument('--use_gamma',             action=argparse.BooleanOptionalAction,default=False,help="Use Gamma or not")
@@ -761,61 +762,61 @@ def main():
     args      = parser.parse_args()
 
     # All the key variables for the simulations
-    num_k     = args.baristanum
-    split     = args.split
-    custNum   = args.customernum
-    rounds    = args.rounds
-    realloc   = args.reallocation
-    cost      = args.cost
-    alpha     = args.alpha
-    beta      = args.beta  # TODO Beta 
-    gamma     = args.gamma
-    myopic    = args.myopic
-    lam       = args.lam
-    withGamma = args.use_gamma
-    Both      = args.both
-    All       = args.all
-    rand      = args.random
+    num_k     = args.baristanum # Works... kind of 
+    split     = args.split          # TODO figure out if this works
+    custNum   = args.customernum    # Works
+    rounds    = args.rounds         # Works
+    realloc   = args.reallocation   # Works
+    cost      = args.cost           # Works
+    alpha     = args.alpha          # Works
+    beta      = args.beta           # TODO BETA 
+    gamma     = args.gamma          # Works, kind of 
+    myopic    = args.myopic         # Works
+    lam       = args.lam            # TODO LAMBDA
+    withGamma = args.use_gamma      # Works
+    Both      = args.both           # Works
+    All       = args.all            # Works
+    rand      = args.random         # Works
         
     if withGamma == True and not Both and not All and not rand:
         print("—>Greedy Simulation")
         K = HumanResources(num_k=num_k, div=split)
         Omni_Gamma_Greedy_Simulation(K,rounds,1000,custNum,cost,realloc,alpha,gamma,lam,myopic)
-        printBaristas(K,True,True,cost,alpha,False)
+        printBaristas(K,True,cost,alpha,realloc)
     elif withGamma == False and not Both and not All and not rand: # Default
         print("—>Greedy Simulation")
         K = HumanResources(num_k=num_k, div=split)
         Greedy_Simulation(K, rounds, 1000, custNum, cost, realloc, alpha)
-        printBaristas(K, True, True, cost, alpha,True)
+        printBaristas(K, True,cost, alpha,realloc)
     elif Both and not All and not rand:
         print("—>Greedy Simulation without Gamma")
         K = HumanResources(num_k=num_k, div=split)
         Greedy_Simulation(K, rounds, 1000, custNum, cost, realloc, alpha)
-        printBaristas(K, True, True, cost, alpha,realloc)
+        printBaristas(K, True,cost, alpha,realloc)
         print("—>Greedy Simulation with Gamma")
         K = HumanResources(num_k=num_k, div=split)
         Omni_Gamma_Greedy_Simulation(K,rounds,1000,custNum,cost,realloc,alpha,gamma,lam,myopic)
-        printBaristas(K, True, True, cost, alpha,realloc)
+        printBaristas(K, True, cost, alpha,realloc)
     elif All == True:
         print("->Random Simulation")
         K = HumanResources(num_k=num_k, div=split)
         Random_simulation(K,rounds,0.5,1000,custNum,cost,realloc)
-        printBaristas(K, True, True, cost, alpha)
+        printBaristas(K, True, cost, alpha,realloc)
         print()
         print("—>Greedy Simulation without Gamma")
         K = HumanResources(num_k=num_k, div=split)
         Greedy_Simulation(K, rounds, 1000, custNum, cost, realloc, alpha)
-        printBaristas(K, True, True, cost, alpha,realloc)
+        printBaristas(K, True, cost, alpha,realloc)
         print()
         print("—>Greedy Simulation with Gamma")
         K = HumanResources(num_k=num_k, div=split)
         Omni_Gamma_Greedy_Simulation(K,rounds,1000,custNum,cost,realloc,alpha,gamma,lam,myopic)
-        printBaristas(K, True, True, cost, alpha,realloc)
+        printBaristas(K, True,cost, alpha,realloc)
     elif rand:
         print("->Random Simulation")
         K = HumanResources(num_k=num_k, div=split)
         Random_simulation(K,rounds,0.5,1000,custNum,cost,realloc)
-        printBaristas(K, True, True, cost, alpha)
+        printBaristas(K, True, True, cost, alpha,realloc)
 
 
 if __name__ == "__main__":
