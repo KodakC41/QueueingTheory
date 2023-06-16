@@ -4,6 +4,7 @@
 | This code contains the simulations (Random, Greedy, Greedy with Expensive Orders)
 | Issue  |  Initials   |  Date       | Change
 |   7    |    CJB      |  06/2023    | Initial Version 
+|   8    |    CJB      |  06/2032    | Added Simulation that allows presetting each line
 """
 import order
 import patron as n
