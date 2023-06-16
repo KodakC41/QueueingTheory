@@ -242,9 +242,8 @@ use_beta     = Does Grubhub being on add additional orders to the system
 beta         = What is the beta value (1 additional? 2 addition? 100 additional?) 
 """
 
-def Greedy_Simulation(K, rounds, stopGenAt, howMantToGenEachRound, cost, realloc, alpha,queue_active,use_beta,beta) -> None:
+def Greedy_Simulation(K,rounds, stopGenAt, howMantToGenEachRound, cost, realloc, alpha,queue_active,use_beta,beta,N = []) -> None:
     x = 0
-    N = []
     if use_beta ==  True and queue_active == True:
         howMantToGenEachRound += beta
     if not realloc:
@@ -347,6 +346,29 @@ def is_expensive(prob, rounds, howManyToGenEachRound, i) -> bool:
         return True
     else:
         return False
+
+
+"""
+Generate patrons to a random line
+"""
+def genPatron(Line,enter, cost) -> n:
+    if Line == True:
+        return n.patron(True, enter, cost)
+    else:
+        return n.patron(False, enter, cost)
+
+"""
+Create a simulation off a given starting point i.e. predefined number of people already in the system
+same as greedy but takes a number of queue and line patrons to generate a ahead of each round
+"""
+def PresetSimulation(K,rounds,howManyToGenEachRound,cost,realloc,alpha,gamma,queue_active,use_beta,beta,num_q_patrons,num_l_patrons):
+    queue_active = True # By Default
+    N = []
+    for i in range(0,num_l_patrons):
+        N.append(genPatron(True,0,cost))
+    for i in range(0,num_q_patrons):
+        N.append(genPatron(False,0,cost))
+    Greedy_Simulation(K,rounds,1000,howManyToGenEachRound,cost,realloc,alpha,queue_active,use_beta,beta,N)
 
 """
 Ordering where expensive orders are taken into account by those entering the system

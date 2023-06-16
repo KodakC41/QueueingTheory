@@ -63,7 +63,6 @@ def print_people(K, file_name="customers_served") -> None:
                         writer.writerow(
                             [k.ident, i, j.person.enter, j.person.cost, j.ext, "queue", ext])
 
-
 """
 Prints the simulation in the case where GrubHub is off — 
 """
@@ -163,6 +162,7 @@ def HumanResources(num_k, div,queue_active):
     for i in range(num_k):
         K.append(genBaristas(div, num_k, i,queue_active))
     return K
+
 
 
 def main():
@@ -269,6 +269,11 @@ def main():
         K = HumanResources(num_k,split,use_queue)
         sim.Random_simulation(K, rounds, 0.5, 1000, custNum, cost, realloc,use_queue,use_beta,beta)
         printBaristas(K, save_sim, cost, alpha, realloc, file_name,use_queue)
+
+    K = HumanResources(10,0.5,use_queue)
+    sim.PresetSimulation(K,rounds,custNum,cost,realloc,alpha,gamma,use_queue,use_beta,beta,12,7) 
+    save_sim= True
+    printBaristas(K, save_sim, cost, alpha, realloc,file_name,use_queue)
 
 
 if __name__ == "__main__":

@@ -17,7 +17,6 @@ import random
 import numpy as np
 
 
-
 class n:
     ident = 1                  # UUID might be a little overkill
     line = bool()              # which line a patron is in
@@ -55,7 +54,6 @@ class n:
 """
 Worker Class
 """
-
 
 class k:
     indent = 1             # (Again) UUID may be a little overkill
