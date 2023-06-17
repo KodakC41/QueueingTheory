@@ -68,7 +68,6 @@ Calculate the cost for a person entering a particular line based on those in lin
 N        = List of Customers 
 """
 
-
 def cost_prior(K, N, time, cost, alpha) -> float:
     line_cost = 0
     queue_cost = 0
