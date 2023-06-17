@@ -19,6 +19,7 @@
 |   6    |    CJB      |  06/2023    | Update Dyanmic cost fuction to give patrons more complete information, this also fixes bugs with reallocation costs as well. 
 |        |             |             | Also added some arguments that will allow the simulation to be saved. 
 |   7    |    CJB      |  06/2023    | Added Beta and change print functions. In addition, new files were created for better code design. 
+|   8    |    CJB      |  06/2023    | Update for present simulations
 """
 
 import argparse
@@ -147,7 +148,7 @@ def genBaristas(div, maxi, i, queue_active) -> barista:
     if queue_active == True:
         if i < (maxi * div):
             return barista.barista(False, i)
-        elif i >= div:
+        elif i >= (div * maxi):
             return barista.barista(True, i)
     else:
         return barista.barista(True,i)
@@ -160,7 +161,7 @@ Hire (Generate) Instances of baristas (k)
 def HumanResources(num_k, div,queue_active):
     K = []
     for i in range(num_k):
-        K.append(genBaristas(div, num_k, i,queue_active))
+        K.append(genBaristas(div, num_k, i, queue_active))
     return K
 
 
@@ -172,6 +173,10 @@ def main():
                          help="Number of Baristas",  type=int, default=2)
     parser.add_argument("-n", "--customernum",
                          help="Number of Customers", type=int, default=2)
+    parser.add_argument("-num_l", "--line_preset",
+                         help="Number of Line Patrons Already in Queue", type=int, default=0)
+    parser.add_argument("-num_q", "--queue_preset",
+                         help="Number of Queue Patrons Already in Queue", type=int, default=0)
     parser.add_argument(
         "-r", "--rounds",help="Number of Rounds",    type=int, default=200)
     parser.add_argument("-s", "--split", help="Split", type=float, default=0.5)
@@ -180,7 +185,7 @@ def main():
     parser.add_argument(
         "-c", "--cost",  help="Cost per order", type=int, default=3)
     parser.add_argument(
-        "-b", "--beta",  help="How many to add to the system (Beta)", type=int, default=1)
+        "-b", "--beta",  help="How many to add to the system (Beta)", type=int, default=0.5)
     parser.add_argument(
         "-g", "--gamma", help="How expensive is an expensiver order (Gamma)", type=float, default=1.1)
     parser.add_argument(
@@ -202,43 +207,47 @@ def main():
                         default=False, help="Run the random simulation")
     parser.add_argument('--reallocation',             action=argparse.BooleanOptionalAction,
                         default=False, help="Allow Reallocation?")
-    parser.add_argument('-use_queue','--queue_active',help="Is GrubHub on or Off",action=argparse.BooleanOptionalAction,default=False)
+    parser.add_argument('-use_queue','--queue_active',help="Is GrubHub on or Off",                                   action=argparse.BooleanOptionalAction,default=False)
     parser.add_argument('-use_beta', '--beta_active', help="Add addition (beta) to the number each round or not",    action=argparse.BooleanOptionalAction,default=False)
+    parser.add_argument('-preset',   '--preset',      help="Is the simulation based on a test scenario",             action=argparse.BooleanOptionalAction,default=False)
     args = parser.parse_args()
 
     # All the key variables for the simulations
-    num_k     = args.baristanum       # Works
-    split     = args.split            # Works 
-    custNum   = args.customernum      # Works
-    rounds    = args.rounds           # Works
-    realloc   = args.reallocation     # Works
-    cost      = args.cost             # Works
-    alpha     = args.alpha            # Works
-    beta      = args.beta             # TODO BETA in progress
-    use_beta  = args.beta_active      # TODO Part of BETA 
-    gamma     = args.gamma            # Works
-    myopic    = args.myopic           # Works
-    lam       = args.lam              # Works 
-    withGamma = args.use_gamma        # Works
-    Both      = args.both             # Works
-    All       = args.all              # Works
-    rand      = args.random           # Works
-    save_sim  = args.save_sim         # Works
-    file_name = args.file_path        # Works
-    use_queue = args.queue_active     # Should work...
+    num_k      = args.baristanum       # Works
+    split      = args.split            # Works 
+    custNum    = args.customernum      # Works
+    rounds     = args.rounds           # Works
+    realloc    = args.reallocation     # Works
+    cost       = args.cost             # Works
+    alpha      = args.alpha            # Works
+    beta       = args.beta             # TODO BETA in progress
+    use_beta   = args.beta_active      # TODO Part of BETA 
+    gamma      = args.gamma            # Works
+    myopic     = args.myopic           # Works
+    lam        = args.lam              # Works 
+    withGamma  = args.use_gamma        # Works
+    Both       = args.both             # Works
+    All        = args.all              # Works
+    rand       = args.random           # Works
+    save_sim   = args.save_sim         # Works
+    file_name  = args.file_path        # Works
+    use_queue  = args.queue_active     # Should work...
+    preset_sim = args.preset
+    num_line_patrons_preset  = args.line_preset
+    num_queue_patrons_preset = args.queue_preset
 
-    if withGamma == True and not Both and not All and not rand:
+    if withGamma == True and not Both and not All and not rand and not preset_sim:
         print("—>Greedy Simulation")
         K = HumanResources(num_k,split,use_queue)
         sim.Gamma_Greedy_Simulation(
             K, rounds, 1000, custNum, cost, realloc, alpha, gamma, lam, myopic,use_queue,use_beta,beta)
         printBaristas(K, save_sim, cost, alpha, realloc, file_name,use_queue)
-    elif withGamma == False and not Both and not All and not rand:  # Default
+    elif withGamma == False and not Both and not All and not rand and not preset_sim:  # Default
         print("—>Greedy Simulation")
         K = HumanResources(num_k,split,use_queue)
         sim.Greedy_Simulation(K, rounds, 1000, custNum, cost, realloc, alpha,use_queue,use_beta,beta)
         printBaristas(K, save_sim, cost, alpha, realloc, file_name,use_queue)
-    elif Both and not All and not rand:
+    elif Both and not All and not rand and not preset_sim:
         print("—>Greedy Simulation without Gamma")
         K = HumanResources(num_k,split,use_queue)
         sim.Greedy_Simulation(K, rounds, 1000, custNum, cost, realloc, alpha,use_queue,use_beta)
@@ -248,7 +257,7 @@ def main():
         sim.Gamma_Greedy_Simulation(
             K, rounds, 1000, custNum, cost, realloc, alpha, gamma, lam, myopic,use_queue,use_beta,beta)
         printBaristas(K, save_sim, cost, alpha, realloc, file_name,use_queue)
-    elif All == True:
+    elif All == True and not preset_sim:
         print("->Random Simulation")
         K = HumanResources(num_k,split,use_queue)
         sim.Random_simulation(K, rounds, 0.5, 1000, custNum, cost, realloc,use_queue,use_beta,beta)
@@ -264,17 +273,19 @@ def main():
         sim.Gamma_Greedy_Simulation(
             K, rounds, 1000, custNum, cost, realloc, alpha, gamma, lam, myopic,use_queue,use_beta,beta)
         printBaristas(K, save_sim, cost, alpha, realloc, file_name,use_queue)
-    elif rand:
+    elif rand and not preset_sim:
         print("->Random Simulation")
         K = HumanResources(num_k,split,use_queue)
         sim.Random_simulation(K, rounds, 0.5, 1000, custNum, cost, realloc,use_queue,use_beta,beta)
         printBaristas(K, save_sim, cost, alpha, realloc, file_name,use_queue)
+    elif preset_sim:
+        K = HumanResources(num_k,split,use_queue)
+        sim.PresetSimulation(K,rounds,custNum,cost,realloc,alpha,use_queue,use_beta,beta,num_queue_patrons_preset,num_line_patrons_preset) 
+        printBaristas(K, save_sim, cost, alpha, realloc,file_name,use_queue)
 
-    K = HumanResources(10,0.5,use_queue)
-    sim.PresetSimulation(K,rounds,custNum,cost,realloc,alpha,gamma,use_queue,use_beta,beta,12,7) 
-    save_sim= True
-    printBaristas(K, save_sim, cost, alpha, realloc,file_name,use_queue)
 
+
+  
 
 if __name__ == "__main__":
     main()

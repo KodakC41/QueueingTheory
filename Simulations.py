@@ -362,7 +362,7 @@ def genPatron(Line,enter, cost) -> n:
 Create a simulation off a given starting point i.e. predefined number of people already in the system
 same as greedy but takes a number of queue and line patrons to generate a ahead of each round
 """
-def PresetSimulation(K,rounds,howManyToGenEachRound,cost,realloc,alpha,gamma,queue_active,use_beta,beta,num_q_patrons,num_l_patrons):
+def PresetSimulation(K,rounds,howManyToGenEachRound,cost,realloc,alpha,queue_active,use_beta,beta,num_q_patrons,num_l_patrons):
     queue_active = True # By Default
     N = []
     for i in range(0,num_l_patrons):
